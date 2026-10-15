@@ -185,7 +185,7 @@ Base URL: `http://localhost:8000`
 | GET | `/health` | `{ "status": "ok" }` |
 | GET | `/analytics/events` | `{ "totalEvents": 5, "totalRegistrations": 42, "upcomingEvents": 3 }` |
 
-`/analytics/events` returns `503` if MongoDB is unreachable.
+Both `/health` and `/analytics/events` return `503` if MongoDB is unreachable or unconfigured.
 
 ## Admin
 

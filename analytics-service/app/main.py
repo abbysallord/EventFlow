@@ -43,7 +43,11 @@ def get_db() -> Database:
 
 
 @app.get("/health", response_model=HealthResponse)
-def health() -> HealthResponse:
+def health(db: Database = Depends(get_db)) -> HealthResponse:
+    try:
+        db.command("ping")
+    except PyMongoError as exc:
+        raise HTTPException(status_code=503, detail="Database unavailable") from exc
     return HealthResponse(status="ok")
 
 
