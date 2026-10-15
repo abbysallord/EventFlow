@@ -21,8 +21,32 @@ async function createEvent(req, res) {
 }
 
 async function listEvents(req, res) {
-  const events = await Event.find().sort({ date: 1, time: 1 });
-  res.json(events);
+  const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+  const limit = req.query.limit !== undefined ? Math.max(1, Math.min(100, parseInt(req.query.limit, 10) || 10)) : 10;
+
+  const filter = {};
+  if (req.query.search && typeof req.query.search === 'string') {
+    const term = req.query.search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (term) {
+      const regex = new RegExp(term, 'i');
+      filter.$or = [{ title: regex }, { location: regex }];
+    }
+  }
+
+  const totalEvents = await Event.countDocuments(filter);
+  const totalPages = Math.ceil(totalEvents / limit);
+  const skip = (page - 1) * limit;
+
+  const events = await Event.find(filter).sort({ date: 1, time: 1 }).skip(skip).limit(limit);
+
+  res.json({
+    events,
+    page,
+    limit,
+    pageSize: limit,
+    totalEvents,
+    totalPages,
+  });
 }
 
 async function getEvent(req, res) {

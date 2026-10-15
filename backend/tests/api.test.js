@@ -68,7 +68,57 @@ describe('events', () => {
     await createEvent({ title: 'Sooner', date: '2099-02-01' });
     const res = await request(app).get('/api/events');
     expect(res.status).toBe(200);
-    expect(res.body.map((e) => e.title)).toEqual(['Sooner', 'Later']);
+    expect(res.body.events.map((e) => e.title)).toEqual(['Sooner', 'Later']);
+    expect(res.body.page).toBe(1);
+    expect(res.body.totalEvents).toBe(2);
+    expect(res.body.totalPages).toBe(1);
+  });
+
+  test('paginates events using page and limit', async () => {
+    await createEvent({ title: 'Event 1', date: '2099-01-01' });
+    await createEvent({ title: 'Event 2', date: '2099-01-02' });
+    await createEvent({ title: 'Event 3', date: '2099-01-03' });
+
+    const page1 = await request(app).get('/api/events?page=1&limit=2');
+    expect(page1.status).toBe(200);
+    expect(page1.body.events).toHaveLength(2);
+    expect(page1.body.events.map((e) => e.title)).toEqual(['Event 1', 'Event 2']);
+    expect(page1.body.page).toBe(1);
+    expect(page1.body.limit).toBe(2);
+    expect(page1.body.pageSize).toBe(2);
+    expect(page1.body.totalEvents).toBe(3);
+    expect(page1.body.totalPages).toBe(2);
+
+    const page2 = await request(app).get('/api/events?page=2&limit=2');
+    expect(page2.status).toBe(200);
+    expect(page2.body.events).toHaveLength(1);
+    expect(page2.body.events.map((e) => e.title)).toEqual(['Event 3']);
+    expect(page2.body.page).toBe(2);
+  });
+
+  test('searches events by name and location', async () => {
+    await createEvent({ title: 'React Workshop', location: 'Bengaluru' });
+    await createEvent({ title: 'Node Summit', location: 'Hyderabad' });
+    await createEvent({ title: 'Design Meetup', location: 'Goa' });
+
+    // Search by title (case-insensitive)
+    const titleMatch = await request(app).get('/api/events?search=react');
+    expect(titleMatch.status).toBe(200);
+    expect(titleMatch.body.events).toHaveLength(1);
+    expect(titleMatch.body.events[0].title).toBe('React Workshop');
+
+    // Search by location (case-insensitive)
+    const locMatch = await request(app).get('/api/events?search=HYDERABAD');
+    expect(locMatch.status).toBe(200);
+    expect(locMatch.body.events).toHaveLength(1);
+    expect(locMatch.body.events[0].title).toBe('Node Summit');
+
+    // Search with no matching records
+    const noMatch = await request(app).get('/api/events?search=nonexistent');
+    expect(noMatch.status).toBe(200);
+    expect(noMatch.body.events).toHaveLength(0);
+    expect(noMatch.body.totalEvents).toBe(0);
+    expect(noMatch.body.totalPages).toBe(0);
   });
 
   test('gets an event by id with registration count', async () => {

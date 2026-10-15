@@ -37,7 +37,14 @@ const send = (method, path, data) =>
 
 export const api = {
   getStats: () => request('/stats'),
-  listEvents: () => request('/events'),
+  listEvents: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', params.page);
+    if (params.limit) query.set('limit', params.limit);
+    if (params.search) query.set('search', params.search);
+    const qs = query.toString();
+    return request(`/events${qs ? `?${qs}` : ''}`);
+  },
   getEvent: (id) => request(`/events/${id}`),
   createEvent: (data) => send('POST', '/events', data),
   updateEvent: (id, data) => send('PUT', `/events/${id}`, data),

@@ -139,7 +139,7 @@ Base URL: `http://localhost:5000/api`. All bodies are JSON.
 | --- | --- | --- | --- |
 | GET | `/health` | Health check | 200 |
 | POST | `/events` | Create an event | 201 |
-| GET | `/events` | List events (soonest first) | 200 |
+| GET | `/events` | List events with pagination and search (`?page=1&limit=10&search=term`) | 200 |
 | GET | `/events/:id` | Event details, including `registrationCount` | 200 |
 | PUT | `/events/:id` | Replace event fields | 200 |
 | DELETE | `/events/:id` | Delete an event and its registrations | 200 |

@@ -87,11 +87,50 @@ describe('EventsList', () => {
   });
 
   test('renders event cards', async () => {
-    mockFetch(200, [
-      { _id: '1', title: 'Node Meetup', date: '2099-01-15T00:00:00.000Z', time: '18:30', location: 'Hyderabad', organizer: 'Org', capacity: 10 },
-    ]);
+    mockFetch(200, {
+      events: [
+        { _id: '1', title: 'Node Meetup', date: '2099-01-15T00:00:00.000Z', time: '18:30', location: 'Hyderabad', organizer: 'Org', capacity: 10 },
+      ],
+      page: 1,
+      limit: 10,
+      totalEvents: 1,
+      totalPages: 1,
+    });
     render(<MemoryRouter><EventsList /></MemoryRouter>);
     expect(await screen.findByText('Node Meetup')).toBeInTheDocument();
+  });
+
+  test('shows custom empty state when search returns no matching events', async () => {
+    mockFetch(200, { events: [], page: 1, limit: 10, totalEvents: 0, totalPages: 0 });
+    render(<MemoryRouter><EventsList /></MemoryRouter>);
+    const searchInput = screen.getByLabelText(/search events/i);
+    await userEvent.type(searchInput, 'Python');
+    expect(await screen.findByText('No events match your search')).toBeInTheDocument();
+    expect(screen.getByText(/no events found matching/i)).toBeInTheDocument();
+  });
+
+  test('renders pagination controls and handles page navigation', async () => {
+    mockFetch(200, {
+      events: [
+        { _id: '1', title: 'Event 1', date: '2099-01-15T00:00:00.000Z', time: '18:30', location: 'Hyderabad', organizer: 'Org', capacity: 10 },
+      ],
+      page: 1,
+      limit: 1,
+      totalEvents: 2,
+      totalPages: 2,
+    });
+    render(<MemoryRouter><EventsList /></MemoryRouter>);
+    expect(await screen.findByText('Event 1')).toBeInTheDocument();
+
+    const prevButton = screen.getByRole('button', { name: /previous/i });
+    const nextButton = screen.getByRole('button', { name: /next/i });
+
+    expect(prevButton).toBeDisabled();
+    expect(nextButton).toBeEnabled();
+    expect(screen.getByText('Page 1 of 2')).toBeInTheDocument();
+
+    await userEvent.click(nextButton);
+    expect(screen.getByText('Page 2 of 2')).toBeInTheDocument();
   });
 });
 
